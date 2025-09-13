@@ -2,211 +2,703 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Parking NearU</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Parking NearU — Full App</title>
+
+<!-- Icons & Leaflet -->
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
 <style>
-:root{--primary:#1976d2;--card:#fff;--bg:#f4f6f9;}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);}
-.screen{display:none;width:100%;height:100%;}
-.active{display:flex;justify-content:center;align-items:center;}
-#splashScreen{flex-direction:column;background:linear-gradient(135deg,var(--primary),#42a5f5);color:#fff;}
-.logo{width:120px;margin-bottom:12px}
-.card{background:var(--card);border-radius:12px;padding:20px;width:100%;max-width:420px;box-shadow:0 6px 20px rgba(0,0,0,0.12)}
-.input{width:100%;padding:12px 14px;margin:6px 0;border-radius:10px;border:1px solid #ddd;font-size:15px}
-button{padding:10px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-weight:600;cursor:pointer}
-button.small-btn{padding:8px 12px;font-size:14px;width:auto}
-#homeScreen{display:flex;flex-direction:column;height:100%;position:relative;}
-.topbar{height:56px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
-.leftGroup{display:flex;align-items:center;gap:12px}
-.profileBtn{display:flex;align-items:center;gap:8px;cursor:pointer}
-.profileAvatar{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700}
-#searchRow{display:flex;gap:8px;padding:8px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
-#searchRow input{flex:1}
-#map{flex:1;width:100%;min-height:360px}
-#seedBtn, #adminPanelBtn{display:none;margin:10px;padding:8px 12px;background:#4caf50;color:#fff;border:none;border-radius:8px;cursor:pointer}
-/* Booking Modal */
-#bookingModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:999;}
-#bookingContent{background:#fff;border-radius:12px;padding:20px;width:90%;max-width:400px;}
-/* Profile Panel */
-#profilePanel{display:none;position:absolute;top:56px;right:12px;background:#fff;padding:12px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:999;width:250px;}
-/* Booking History */
-#bookingHistoryPanel{display:none;position:absolute;top:56px;left:12px;background:#fff;padding:12px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:999;width:300px;max-height:400px;overflow-y:auto;}
-/* Admin Modal */
-#adminModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:999;}
-#adminModalContent{background:#fff;border-radius:12px;padding:20px;width:90%;max-width:400px;}
-/* Notifications */
-.notification{position:fixed;bottom:20px;right:20px;background:#1976d2;color:#fff;padding:12px 16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:1000;}
+  :root{
+    --primary:#1565c0;
+    --accent:#42a5f5;
+    --bg:#f4f7fb;
+    --card:#fff;
+    --muted:#6b7280;
+    --success:#2e7d32;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:#111;}
+  .screen{display:none;min-height:100vh;width:100%;align-items:center;justify-content:center;padding:20px;}
+  .screen.active{display:flex;animation:fadeIn .28s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border-radius:14px;padding:20px;width:100%;max-width:520px;box-shadow:0 12px 30px rgba(12,24,40,0.06)}
+  h1,h2{margin:0}
+  .center{text-align:center}
+  .logo{width:120px;height:120px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:28px;box-shadow:0 12px 30px rgba(25,118,210,0.18);animation:bounce 1.25s infinite}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #e6e9ef;background:#fff;margin-top:10px;font-size:15px}
+  .input:focus{outline:none;box-shadow:0 8px 30px rgba(21,101,192,0.06);border-color:var(--primary)}
+  .row{display:flex;gap:10px}
+  .btn{display:inline-block;padding:11px 14px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-weight:700;cursor:pointer}
+  .btn.secondary{background:#fff;color:var(--primary);border:1px solid #e6e9ef}
+  .btn.small{padding:8px 10px;border-radius:8px}
+  a.link{color:var(--primary);text-decoration:none}
+  .muted{color:var(--muted);font-size:14px}
+  .actionRow{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+  .socials{display:flex;gap:10px;justify-content:center;margin-top:10px}
+  .tooltip{position:absolute;left:0;top:42px;min-width:240px;background:#fff;border-radius:10px;padding:12px;box-shadow:0 10px 30px rgba(10,20,40,0.08);border:1px solid #eef;display:none;font-size:13px;color:#111;z-index:40}
+  .rule{display:flex;gap:8px;align-items:center;margin-top:6px}
+  .rule.ok{color:var(--success)}
+  .rule .dot{width:10px;height:10px;border-radius:50%;background:#ddd}
+  .rule.ok .dot{background:var(--success)}
+  .appShell{width:100%;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;height:100vh}
+  .topbar{height:64px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px;box-shadow:0 6px 18px rgba(6,15,40,0.08)}
+  #searchRow{display:flex;gap:10px;padding:12px;border-radius:12px;background:#fff;box-shadow:0 6px 20px rgba(18,24,40,0.03);margin:14px}
+  #searchRow input{flex:1}
+  #map{flex:1;border-radius:12px;margin:14px;background:#fff;overflow:hidden;min-height:380px}
+  #bookingModal{display:none;position:fixed;inset:0;background:rgba(6,12,24,0.5);align-items:center;justify-content:center;z-index:9999}
+  #bookingCard{background:#fff;padding:18px;border-radius:12px;width:90%;max-width:420px;box-shadow:0 12px 40px rgba(2,6,23,0.25)}
+  .mutedSmall{font-size:13px;color:var(--muted)}
+  .tiny{font-size:12px;color:#888;margin-top:10px;text-align:center}
+  .adminPanel{position:fixed;right:18px;bottom:18px;z-index:60}
+  .adminPanel .card{padding:12px;border-radius:12px}
+  #recaptcha-container{display:none}
+  @media (max-width:720px){ .card{margin:8px} #map{min-height:300px} }
 </style>
 </head>
 <body>
 
 <!-- Splash -->
-<div id="splashScreen" class="screen active">
-<img src="JU_ENTERPRISE_LOGO.png" class="logo" alt="logo">
-<h2>Parking NearU</h2>
-</div>
+<section id="splash" class="screen active">
+  <div class="center">
+    <div class="logo">PN</div>
+    <div style="margin-top:12px;color:#fff;font-weight:600">Parking NearU</div>
+  </div>
+</section>
 
-<!-- Login -->
-<div id="loginScreen" class="screen">
-<div class="card">
-<h2>Login</h2>
-<input id="loginId" class="input" type="text" placeholder="Email">
-<input id="loginPass" class="input" type="password" placeholder="Password">
-<button id="btnLogin">Login</button>
-<p><a href="#" id="goSignup">Create account</a></p>
-</div>
-</div>
+<!-- Login Screen -->
+<section id="login" class="screen">
+  <div class="card center">
+    <h2>Welcome back</h2>
+    <p class="muted">Sign in to continue</p>
+    <input id="loginEmail" class="input" type="email" placeholder="Email (optional)">
+    <input id="loginPassword" class="input" type="password" placeholder="Password (if using email)">
+    <input id="loginPhone" class="input" type="tel" placeholder="Phone (use +countrycode, optional)">
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button id="emailSignInBtn" class="btn">Sign in (Email)</button>
+      <button id="sendLoginOtpBtn" class="btn small">Sign in (OTP)</button>
+    </div>
+    <div id="loginOtpWrap" style="display:none;margin-top:8px">
+      <input id="loginOtp" class="input" placeholder="Enter OTP">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="verifyLoginOtpBtn" class="btn small">Verify OTP</button>
+        <button id="cancelLoginOtpBtn" class="btn secondary small">Cancel</button>
+      </div>
+    </div>
+
+    <div class="socials">
+      <button id="googleLogin" class="btn secondary">Google</button>
+      <button id="facebookLogin" class="btn secondary">Facebook</button>
+    </div>
+
+    <div class="actionRow" style="width:100%;margin-top:10px">
+      <a id="goToSignup" class="link">Create account</a>
+      <a id="forgotPassword" class="link">Forgot password?</a>
+    </div>
+    <div class="tiny">By continuing you agree to Terms & Privacy</div>
+  </div>
+</section>
 
 <!-- Signup -->
-<div id="signupScreen" class="screen">
-<div class="card">
-<h2>Create Account</h2>
-<input id="signupEmail" class="input" type="email" placeholder="Email">
-<input id="signupPass" class="input" type="password" placeholder="Password">
-<input id="signupConfirm" class="input" type="password" placeholder="Confirm Password">
-<button id="btnSignup">Register</button>
-<p>Already have an account? <a href="#" id="goLogin">Login</a></p>
-</div>
-</div>
+<section id="signup" class="screen">
+  <div class="card">
+    <h2 class="center">Create account</h2>
+    <p class="muted center">Create your Parking NearU account</p>
+    <input id="signupEmail" class="input" type="email" placeholder="Email">
+    <input id="signupPhone" class="input" type="tel" placeholder="Phone (use +countryformat)">
+    <div style="position:relative;margin-top:8px">
+      <input id="signupPassword" class="input" type="password" placeholder="Password">
+      <div style="position:absolute;right:8px;top:10px">
+        <span id="pwdInfo" class="material-icons" style="color:var(--primary);cursor:pointer">info</span>
+        <div id="pwdTooltip" class="tooltip">
+          <div style="font-weight:600">Password must include:</div>
+          <div id="ruleLength" class="rule"><div class="dot"></div> Minimum 8 characters</div>
+          <div id="ruleUpper" class="rule"><div class="dot"></div> One uppercase letter</div>
+          <div id="ruleLower" class="rule"><div class="dot"></div> One lowercase letter</div>
+          <div id="ruleNumber" class="rule"><div class="dot"></div> One number</div>
+          <div id="ruleSpecial" class="rule"><div class="dot"></div> One special character</div>
+        </div>
+      </div>
+    </div>
+    <input id="signupPasswordConfirm" class="input" type="password" placeholder="Confirm password">
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button id="emailSignupBtn" class="btn">Create (Email)</button>
+      <button id="sendSignupOtpBtn" class="btn small">Signup (OTP)</button>
+    </div>
+    <div id="signupOtpWrap" style="display:none;margin-top:8px">
+      <input id="signupOtp" class="input" placeholder="Enter OTP">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="verifySignupOtpBtn" class="btn small">Verify OTP</button>
+        <button id="cancelSignupOtpBtn" class="btn secondary small">Cancel</button>
+      </div>
+    </div>
+    <div class="tiny center" style="margin-top:10px"><a id="goToLogin" class="link">Already have an account? Login</a></div>
+  </div>
+</section>
 
-<!-- Verify -->
-<div id="verifyScreen" class="screen">
-<div class="card">
-<h2>Verify Email</h2>
-<p>Check your inbox for the verification link. After verifying, click "Check".</p>
-<button id="btnResend">Resend</button>
-<button id="btnCheckStatus" class="small-btn">Check</button>
-<button id="btnLogoutVerify" class="small-btn">Logout</button>
-</div>
-</div>
+<!-- Email verify screen -->
+<section id="verify" class="screen">
+  <div class="card center">
+    <h2>Verify your email</h2>
+    <p class="muted">We sent a verification email. Click the link in your inbox then tap "I've verified".</p>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="resendVerification" class="btn">Resend</button>
+      <button id="checkVerification" class="btn small">I've verified</button>
+      <button id="logoutFromVerify" class="btn secondary small">Logout</button>
+    </div>
+  </div>
+</section>
 
 <!-- Home -->
-<div id="homeScreen" class="screen">
-<div class="topbar">
-<div class="leftGroup">
-<div id="profileBtn" class="profileBtn" title="Profile">
-<div id="profileAvatar" class="profileAvatar">U</div>
-<div id="brandText">Parking NearU</div>
-</div>
-</div>
-<button id="btnLogout" class="small-btn">Logout</button>
-</div>
+<section id="home" class="screen" style="padding:0">
+  <div class="appShell">
+    <div class="topbar">
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div style="width:44px;height:44px;border-radius:10px;background:#fff;color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700">PN</div>
+        <div style="font-weight:700">Parking NearU</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="userInfo" style="color:#fff"></div>
+        <button id="logoutBtn" class="btn small">Logout</button>
+      </div>
+    </div>
 
-<div id="searchRow">
-<input id="fromInput" class="input" placeholder="Your location">
-<input id="toInput" class="input" placeholder="Destination">
-<button id="btnSearch" class="small-btn">Go</button>
-<button id="btnLocate" class="small-btn">📍</button>
-<button id="btnToggle" class="small-btn">🗺️</button>
-</div>
+    <div id="searchRow">
+      <input id="fromInput" class="input" placeholder="Your location (optional)">
+      <input id="toInput" class="input" placeholder="Search spot name or address">
+      <button id="btnSearch" class="btn small">Go</button>
+      <button id="btnLocate" class="btn small">📍</button>
+      <button id="btnToggle" class="btn small">🗺️</button>
+    </div>
 
-<button id="adminPanelBtn">Admin Panel</button>
-<button id="seedBtn">Seed Firestore Data</button>
+    <div id="map"></div>
+  </div>
 
-<div id="map"></div>
+  <div class="adminPanel" id="adminPanelHolder" style="display:none">
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="font-weight:700">Admin</div>
+        <button id="openAdmin" class="btn small">Open</button>
+      </div>
+    </div>
+  </div>
+</section>
 
-<!-- Profile Panel -->
-<div id="profilePanel">
-<p><b>Email:</b> <span id="profileEmail"></span></p>
-<p><b>Verified:</b> <span id="profileVerified"></span></p>
-<button id="btnCloseProfile" class="small-btn">Close</button>
-</div>
-
-<!-- Booking History Panel -->
-<div id="bookingHistoryPanel">
-<h4>My Bookings</h4>
-<div id="bookingList"></div>
-<button id="btnCloseHistory" class="small-btn">Close</button>
-</div>
-
-<!-- Booking Modal -->
+<!-- Booking modal -->
 <div id="bookingModal">
-<div id="bookingContent">
-<h3>Book Parking Spot</h3>
-<p id="spotName"></p>
-<input id="vehicleNumber" class="input" placeholder="Vehicle Number">
-<div id="vehicleDetails"></div>
-<input id="parkingTime" class="input" type="number" placeholder="Hours">
-<input id="mobileNumber" class="input" type="tel" placeholder="Mobile Number">
-<button id="confirmBooking">Confirm Booking</button>
-<button onclick="document.getElementById('bookingModal').style.display='none'">Cancel</button>
-</div>
-</div>
-
-<!-- Admin Modal -->
-<div id="adminModal">
-<div id="adminModalContent">
-<h3>Add Parking Spot</h3>
-<input id="adminSpotName" class="input" placeholder="Spot Name">
-<input id="adminLat" class="input" type="number" placeholder="Latitude">
-<input id="adminLng" class="input" type="number" placeholder="Longitude">
-<input id="adminCapacity" class="input" type="number" placeholder="Capacity">
-<input id="adminAvailable" class="input" type="number" placeholder="Available Spots">
-<button id="btnAddSpot">Add Spot</button>
-<button onclick="document.getElementById('adminModal').style.display='none'">Cancel</button>
-</div>
+  <div id="bookingCard">
+    <h3 id="bookingTitle">Book spot</h3>
+    <div id="bookingInfo" class="mutedSmall"></div>
+    <input id="bookVehicle" class="input" placeholder="Vehicle number (e.g. AS01AB1234)">
+    <div id="vehicleLookup" class="mutedSmall"></div>
+    <input id="bookHours" class="input" type="number" placeholder="Hours (1)">
+    <input id="bookMobile" class="input" placeholder="Mobile (optional)">
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="confirmBookingBtn" class="btn">Confirm</button>
+      <button id="cancelBookingBtn" class="btn secondary">Cancel</button>
+    </div>
+  </div>
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Admin modal -->
+<div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(6,12,24,0.5);align-items:center;justify-content:center;z-index:9999">
+  <div style="background:#fff;padding:16px;border-radius:12px;width:90%;max-width:520px">
+    <h3>Admin — Add spot & Seed</h3>
+    <input id="adminSpotName" class="input" placeholder="Spot name">
+    <input id="adminLat" class="input" placeholder="Latitude">
+    <input id="adminLng" class="input" placeholder="Longitude">
+    <input id="adminCapacity" class="input" placeholder="Capacity" type="number">
+    <input id="adminAvailable" class="input" placeholder="Available" type="number">
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="addSpotBtn" class="btn">Add Spot</button>
+      <button id="seedBtn" class="btn secondary">Seed Sample Data</button>
+      <button id="closeAdminBtn" class="btn secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- reCAPTCHA container -->
+<div id="recaptcha-container"></div>
+
+<!-- Firebase + Leaflet -->
 <script type="module">
+/* =============================
+   FULL APP — JS (single file)
+   ============================= */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, reload } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, getDocs, getDoc, query, where, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  signOut,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-const firebaseConfig={ apiKey:"AIzaSyDm9R0kXulN2wKUqoes0U5HiQkc6OukWJw", authDomain:"parking-nearu.firebaseapp.com", projectId:"parking-nearu" };
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  where,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// DOM
-const splash=document.getElementById('splashScreen'), loginScreen=document.getElementById('loginScreen'), signupScreen=document.getElementById('signupScreen'), verifyScreen=document.getElementById('verifyScreen'), homeScreen=document.getElementById('homeScreen');
-const loginId=document.getElementById('loginId'), loginPass=document.getElementById('loginPass'), btnLogin=document.getElementById('btnLogin');
-const signupEmail=document.getElementById('signupEmail'), signupPass=document.getElementById('signupPass'), signupConfirm=document.getElementById('signupConfirm'), btnSignup=document.getElementById('btnSignup');
-const goSignup=document.getElementById('goSignup'), goLogin=document.getElementById('goLogin');
+import L from "https://unpkg.com/leaflet/dist/leaflet-src.esm.js";
 
-let currentUser=null;
+/* --------- Firebase config (replace if using another project) -------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDm9R0kXulN2wKUqoes0U5HiQkc6OukWJw",
+  authDomain: "parking-nearu.firebaseapp.com",
+  projectId: "parking-nearu",
+  storageBucket: "parking-nearu.appspot.com",
+  messagingSenderId: "531560136106",
+  appId: "1:531560136106:web:e9acc1538d2318c870ffd3",
+  measurementId: "G-ZBQMDN1D87"
+};
+/* -------------------------------------------------------------------- */
 
-// Auth state
-onAuthStateChanged(auth, async(user)=>{
-    currentUser=user;
-    if(!user){ switchScreen(loginScreen); }
-    else if(!user.emailVerified){ switchScreen(verifyScreen); }
-    else{ switchScreen(homeScreen); initHome(); }
+const app = initializeApp(firebaseConfig);
+try { getAnalytics(app); } catch(e){ /* optional */ }
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* --------------- DOM refs --------------- */
+const screens = {
+  splash: document.getElementById('splash'),
+  login: document.getElementById('login'),
+  signup: document.getElementById('signup'),
+  verify: document.getElementById('verify'),
+  home: document.getElementById('home')
+};
+const showScreen = (s)=>{ Object.values(screens).forEach(el=>el.classList.remove('active')); s.classList.add('active'); };
+
+/* Splash safety: always move to login after 2s (safety net if Firebase fails) */
+let currentUser = null;
+setTimeout(()=>{ if(!currentUser) showScreen(screens.login); }, 2000);
+
+/* Auth-related DOM */
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
+const loginPhone = document.getElementById('loginPhone');
+const emailSignInBtn = document.getElementById('emailSignInBtn');
+const sendLoginOtpBtn = document.getElementById('sendLoginOtpBtn');
+const loginOtpWrap = document.getElementById('loginOtpWrap');
+const loginOtp = document.getElementById('loginOtp');
+const verifyLoginOtpBtn = document.getElementById('verifyLoginOtpBtn');
+const cancelLoginOtpBtn = document.getElementById('cancelLoginOtpBtn');
+const googleLogin = document.getElementById('googleLogin');
+const facebookLogin = document.getElementById('facebookLogin');
+const goToSignup = document.getElementById('goToSignup');
+const forgotPassword = document.getElementById('forgotPassword');
+
+const signupEmail = document.getElementById('signupEmail');
+const signupPhone = document.getElementById('signupPhone');
+const signupPassword = document.getElementById('signupPassword');
+const signupPasswordConfirm = document.getElementById('signupPasswordConfirm');
+const emailSignupBtn = document.getElementById('emailSignupBtn');
+const sendSignupOtpBtn = document.getElementById('sendSignupOtpBtn');
+const signupOtpWrap = document.getElementById('signupOtpWrap');
+const signupOtp = document.getElementById('signupOtp');
+const verifySignupOtpBtn = document.getElementById('verifySignupOtpBtn');
+const cancelSignupOtpBtn = document.getElementById('cancelSignupOtpBtn');
+const goToLogin = document.getElementById('goToLogin');
+
+const resendVerification = document.getElementById('resendVerification');
+const checkVerification = document.getElementById('checkVerification');
+const logoutFromVerify = document.getElementById('logoutFromVerify');
+
+const userInfo = document.getElementById('userInfo');
+const logoutBtn = document.getElementById('logoutBtn');
+
+const fromInput = document.getElementById('fromInput');
+const toInput = document.getElementById('toInput');
+const btnSearch = document.getElementById('btnSearch');
+const btnLocate = document.getElementById('btnLocate');
+const btnToggle = document.getElementById('btnToggle');
+
+const bookingModal = document.getElementById('bookingModal');
+const bookingCard = document.getElementById('bookingCard');
+const bookingTitle = document.getElementById('bookingTitle');
+const bookingInfo = document.getElementById('bookingInfo');
+const bookVehicle = document.getElementById('bookVehicle');
+const vehicleLookup = document.getElementById('vehicleLookup');
+const bookHours = document.getElementById('bookHours');
+const bookMobile = document.getElementById('bookMobile');
+const confirmBookingBtn = document.getElementById('confirmBookingBtn');
+const cancelBookingBtn = document.getElementById('cancelBookingBtn');
+
+const adminPanelHolder = document.getElementById('adminPanelHolder');
+const openAdmin = document.getElementById('openAdmin');
+const adminModal = document.getElementById('adminModal');
+const addSpotBtn = document.getElementById('addSpotBtn');
+const seedBtn = document.getElementById('seedBtn');
+const closeAdminBtn = document.getElementById('closeAdminBtn');
+
+const adminSpotName = document.getElementById('adminSpotName');
+const adminLat = document.getElementById('adminLat');
+const adminLng = document.getElementById('adminLng');
+const adminCapacity = document.getElementById('adminCapacity');
+const adminAvailable = document.getElementById('adminAvailable');
+
+const pwdInfo = document.getElementById('pwdInfo');
+const pwdTooltip = document.getElementById('pwdTooltip');
+const ruleLength = document.getElementById('ruleLength');
+const ruleUpper = document.getElementById('ruleUpper');
+const ruleLower = document.getElementById('ruleLower');
+const ruleNumber = document.getElementById('ruleNumber');
+const ruleSpecial = document.getElementById('ruleSpecial');
+
+pwdInfo.addEventListener('mouseenter', ()=>pwdTooltip.style.display='block');
+pwdInfo.addEventListener('mouseleave', ()=>pwdTooltip.style.display='none');
+signupPassword.addEventListener('input', ()=>{
+  const v = signupPassword.value;
+  const hasLen = v.length >= 8;
+  const hasUpper = /[A-Z]/.test(v);
+  const hasLower = /[a-z]/.test(v);
+  const hasNum = /\d/.test(v);
+  const hasSpec = /[\W_]/.test(v);
+  ruleLength.classList.toggle('ok', hasLen);
+  ruleUpper.classList.toggle('ok', hasUpper);
+  ruleLower.classList.toggle('ok', hasLower);
+  ruleNumber.classList.toggle('ok', hasNum);
+  ruleSpecial.classList.toggle('ok', hasSpec);
 });
 
-// Login
-btnLogin.onclick=async()=>{
-    try{
-        const cred=await signInWithEmailAndPassword(auth, loginId.value, loginPass.value);
-        if(!cred.user.emailVerified) switchScreen(verifyScreen);
-        else switchScreen(homeScreen);
-    }catch(e){ alert(e.message); }
-};
-
-// Signup
-btnSignup.onclick=async()=>{
-    if(signupPass.value!==signupConfirm.value){ alert("Passwords do not match"); return; }
-    try{
-        const cred=await createUserWithEmailAndPassword(auth, signupEmail.value, signupPass.value);
-        await sendEmailVerification(cred.user);
-        alert("Verification email sent"); switchScreen(verifyScreen);
-    }catch(e){ alert(e.message); }
-};
-
-// Switch links
-goSignup.onclick=(e)=>{ e.preventDefault(); switchScreen(signupScreen); };
-goLogin.onclick=(e)=>{ e.preventDefault(); switchScreen(loginScreen); };
-
-// Splash
-setTimeout(()=>{ switchScreen(loginScreen); },1000);
-
-// Function to initialize home features (map, bookings, admin, profile, etc.)
-function initHome(){
-    // ... We will fully integrate map, admin panel, booking modal, notifications next
+/* ---------- reCAPTCHA (invisible) ---------- */
+let recaptchaVerifier = null;
+function ensureRecaptcha(){
+  if(recaptchaVerifier) return recaptchaVerifier;
+  recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', { size: 'invisible' }, auth);
+  recaptchaVerifier.render().catch(()=>{/* ignore render errors for dev */});
+  return recaptchaVerifier;
 }
+
+/* ---------- Auth flows ---------- */
+let confirmationResult = null;
+
+// Email sign-in
+emailSignInBtn.addEventListener('click', async ()=>{
+  const email = loginEmail.value.trim();
+  const pass = loginPassword.value;
+  if(!email || !pass){ alert('Enter email and password to sign in.'); return; }
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+  }catch(e){ alert(e.message || e); }
+});
+
+// Send login OTP (phone)
+sendLoginOtpBtn.addEventListener('click', async ()=>{
+  const phone = loginPhone.value.trim();
+  if(!phone){ alert('Enter phone number in international format like +919876543210'); return; }
+  try{
+    const appVerifier = ensureRecaptcha();
+    confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
+    loginOtpWrap.style.display = 'block';
+    alert('OTP sent to ' + phone);
+  }catch(e){ alert('OTP error: ' + (e.message || e)); }
+});
+
+verifyLoginOtpBtn.addEventListener('click', async ()=>{
+  const code = loginOtp.value.trim();
+  if(!code) { alert('Enter OTP'); return; }
+  try{
+    await confirmationResult.confirm(code);
+    loginOtpWrap.style.display = 'none';
+  }catch(e){ alert('OTP verify failed: ' + (e.message || e)); }
+});
+cancelLoginOtpBtn.addEventListener('click', ()=>{ loginOtpWrap.style.display='none'; loginOtp.value=''; });
+
+// Google sign-in
+googleLogin.addEventListener('click', async ()=>{
+  try{
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  }catch(e){ alert('Google sign-in: '+(e.message||e)); }
+});
+
+// Facebook sign-in
+facebookLogin.addEventListener('click', async ()=>{
+  try{
+    const provider = new FacebookAuthProvider();
+    await signInWithPopup(auth, provider);
+  }catch(e){ alert('Facebook sign-in: '+(e.message||e)); }
+});
+
+// goto signup/login
+goToSignup.addEventListener('click', ()=> showScreen(screens.signup));
+goToLogin.addEventListener('click', ()=> showScreen(screens.login));
+
+/* Forgot password */
+forgotPassword.addEventListener('click', async ()=>{
+  const email = loginEmail.value.trim();
+  if(!email){ alert('Enter your email in the email field to receive reset link.'); return; }
+  try{
+    await sendPasswordResetEmail(auth, email);
+    alert('Password reset email sent to ' + email);
+  }catch(e){ alert(e.message || e); }
+});
+
+/* Signup (email+password) */
+emailSignupBtn.addEventListener('click', async ()=>{
+  const email = signupEmail.value.trim();
+  const phone = signupPhone.value.trim();
+  const pass = signupPassword.value;
+  const confirm = signupPasswordConfirm.value;
+  if(!email){ alert('Enter email'); return; }
+  if(pass !== confirm){ alert('Passwords do not match'); return; }
+  const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+  if(!pattern.test(pass)){ alert('Password does not meet rules'); return; }
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await sendEmailVerification(cred.user);
+    alert('Account created. Verification email sent. Please verify before accessing the app.');
+    showScreen(screens.verify);
+  }catch(e){ alert(e.message || e); }
+});
+
+/* Signup via OTP (phone) */
+sendSignupOtpBtn.addEventListener('click', async ()=>{
+  const phone = signupPhone.value.trim();
+  if(!phone){ alert('Enter phone in international format'); return; }
+  try{
+    const appVerifier = ensureRecaptcha();
+    confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
+    signupOtpWrap.style.display = 'block';
+    alert('OTP sent to ' + phone);
+  }catch(e){ alert('OTP error: ' + (e.message||e)); }
+});
+verifySignupOtpBtn.addEventListener('click', async ()=>{
+  const code = signupOtp.value.trim();
+  if(!code){ alert('Enter OTP'); return; }
+  try{
+    await confirmationResult.confirm(code);
+    alert('Phone verified and signed in.');
+    signupOtpWrap.style.display = 'none';
+  }catch(e){ alert('OTP verify failed: ' + (e.message||e)); }
+});
+cancelSignupOtpBtn.addEventListener('click', ()=>{ signupOtpWrap.style.display='none'; signupOtp.value=''; });
+
+/* Verify email screen actions */
+resendVerification.addEventListener('click', async ()=>{
+  const u = auth.currentUser;
+  if(!u){ alert('No user'); return; }
+  try{
+    await sendEmailVerification(u);
+    alert('Verification email resent.');
+  }catch(e){ alert(e.message||e); }
+});
+checkVerification.addEventListener('click', async ()=>{
+  const u = auth.currentUser;
+  if(!u){ alert('No user'); return; }
+  await u.reload();
+  if(u.emailVerified){ showScreen(screens.home); initAppForUser(u); } else alert('Email not verified yet.');
+});
+logoutFromVerify.addEventListener('click', async ()=>{ await signOut(auth); showScreen(screens.login); });
+
+/* Logout from topbar */
+logoutBtn.addEventListener('click', async ()=>{ await signOut(auth); showScreen(screens.login); });
+
+/* ---------- Map & Firestore ---------- */
+let map, streetLayer, satLayer, markersLayer, currentSpot=null;
+async function initMap(){
+  if(map) return;
+  map = L.map('map').setView([26.1806, 91.7495], 13);
+  streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  satLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png');
+  markersLayer = L.layerGroup().addTo(map);
+
+  // locate and toggle
+  btnLocate.addEventListener('click', ()=>{ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=> map.setView([p.coords.latitude,p.coords.longitude],15)); });
+  btnToggle.addEventListener('click', ()=>{ if(map.hasLayer(streetLayer)){ map.removeLayer(streetLayer); map.addLayer(satLayer);} else { map.removeLayer(satLayer); map.addLayer(streetLayer);} });
+
+  await loadSpotsToMap();
+}
+
+/* Load parking spots */
+async function loadSpotsToMap(){
+  if(!map) return;
+  markersLayer.clearLayers();
+  try{
+    const snap = await getDocs(collection(db, "parkingSpots"));
+    snap.forEach(docSnap=>{
+      const s = docSnap.data();
+      const m = L.marker([s.lat, s.lng]).addTo(markersLayer);
+      m.bindPopup(`<b>${escapeHtml(s.name)}</b><br>Available: ${s.available}/${s.capacity}<br><button data-id="${docSnap.id}" class="bookBtn">Book</button>`);
+      m.on('popupopen', ()=>{
+        setTimeout(()=>{
+          const btn = document.querySelector('.bookBtn');
+          if(btn) btn.onclick = ()=> openBookingModal(docSnap.id, s);
+        },100);
+      });
+    });
+  }catch(e){ console.error(e); alert('Error loading spots: ' + (e.message||e)); }
+}
+
+function escapeHtml(txt){ return String(txt).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]); }
+
+/* Open booking modal */
+function openBookingModal(spotId, spotData){
+  currentSpot = { id: spotId, ...spotData };
+  bookingTitle.innerText = `Book: ${spotData.name}`;
+  bookingInfo.innerHTML = `Available: ${spotData.available}/${spotData.capacity}`;
+  bookVehicle.value = '';
+  vehicleLookup.innerHTML = '';
+  bookHours.value = 1;
+  bookMobile.value = auth.currentUser?.phoneNumber || auth.currentUser?.email || '';
+  document.getElementById('bookingModal').style.display = 'flex';
+}
+/* Close modal */
+cancelBookingBtn.addEventListener('click', ()=>document.getElementById('bookingModal').style.display = 'none');
+
+/* Vehicle lookup */
+bookVehicle.addEventListener('blur', async ()=>{
+  const vnum = bookVehicle.value.trim().toUpperCase();
+  if(!vnum) return vehicleLookup.innerHTML = '';
+  try{
+    const q = query(collection(db, "vehicles"), where("vehicleNumber", "==", vnum));
+    const snap = await getDocs(q);
+    if(!snap.empty){
+      const v = snap.docs[0].data();
+      vehicleLookup.innerHTML = `<div><b>Owner:</b> ${escapeHtml(v.ownerName)} • <b>Type:</b> ${escapeHtml(v.vehicleType)}</div><div class="mutedSmall">Reg: ${escapeHtml(v.registrationDate)} • Docs exp: ${escapeHtml(v.documents?.[0]?.expiresAt||'—')}</div>`;
+    } else vehicleLookup.innerHTML = `<div class="mutedSmall" style="color:#c33">No vehicle found</div>`;
+  }catch(e){ vehicleLookup.innerHTML='Error fetching vehicle'; }
+});
+
+/* Confirm booking -> save to Firestore */
+confirmBookingBtn.addEventListener('click', async ()=>{
+  if(!currentSpot) return alert('No spot selected');
+  const vehicleNumber = bookVehicle.value.trim().toUpperCase();
+  const hours = parseInt(bookHours.value) || 1;
+  const mobile = bookMobile.value.trim();
+  if(!vehicleNumber) return alert('Enter vehicle number');
+  try{
+    await addDoc(collection(db, "bookings"), {
+      spotId: currentSpot.id,
+      spotName: currentSpot.name,
+      vehicleNumber,
+      hours,
+      mobile,
+      user: auth.currentUser ? (auth.currentUser.email || auth.currentUser.phoneNumber || auth.currentUser.uid) : 'guest',
+      createdAt: new Date().toISOString()
+    });
+    alert('Booking confirmed ✅');
+    document.getElementById('bookingModal').style.display='none';
+  }catch(e){ alert('Booking error: ' + (e.message||e)); }
+});
+
+/* Search */
+btnSearch.addEventListener('click', async ()=>{
+  const q = toInput.value.trim().toLowerCase();
+  if(!q){ alert('Enter spot name or address'); return; }
+  try{
+    const snap = await getDocs(collection(db, "parkingSpots"));
+    let found = false;
+    snap.forEach(docSnap=>{
+      const s = docSnap.data();
+      if(s.name.toLowerCase().includes(q)){ found = true; map.setView([s.lat, s.lng], 16); }
+    });
+    if(!found) alert('No spot matched');
+  }catch(e){ alert('Search error: '+(e.message||e)); }
+});
+
+/* ---------- Admin ---------- */
+async function checkAdminUI(user){
+  try{
+    const adminsDoc = await getDoc(doc(db, "settings", "admins"));
+    if(!adminsDoc.exists()) { adminPanelHolder.style.display='none'; return; }
+    const adminData = adminsDoc.data();
+    const adminEmails = adminData.emails || [];
+    if(user && user.email && adminEmails.includes(user.email)) adminPanelHolder.style.display='block'; else adminPanelHolder.style.display='none';
+  }catch(e){ console.error('Admin check error', e); adminPanelHolder.style.display='none'; }
+}
+
+openAdmin.addEventListener('click', ()=> adminModal.style.display='flex');
+closeAdminBtn.addEventListener('click', ()=> adminModal.style.display='none');
+
+addSpotBtn.addEventListener('click', async ()=>{
+  const name = adminSpotName.value.trim();
+  const lat = parseFloat(adminLat.value);
+  const lng = parseFloat(adminLng.value);
+  const capacity = parseInt(adminCapacity.value) || 0;
+  const available = parseInt(adminAvailable.value) || 0;
+  if(!name || isNaN(lat) || isNaN(lng)) return alert('Provide valid name, lat, lng');
+  try{
+    await addDoc(collection(db, "parkingSpots"), { name, lat, lng, capacity, available });
+    alert('Spot added');
+    adminModal.style.display='none';
+    adminSpotName.value=''; adminLat.value=''; adminLng.value=''; adminCapacity.value=''; adminAvailable.value='';
+    await loadSpotsToMap();
+  }catch(e){ alert('Add spot error: '+(e.message||e)); }
+});
+
+seedBtn.addEventListener('click', async ()=>{
+  try{
+    const spots = [
+      { name: "Guwahati Railway Station Parking", lat: 26.1806, lng: 91.7495, capacity: 150, available: 90 },
+      { name: "Guwahati Airport Parking (LGBI)", lat: 26.1061, lng: 91.5859, capacity: 250, available: 180 },
+      { name: "Fancy Bazar Multi-Level Parking", lat: 26.1867, lng: 91.7405, capacity: 100, available: 60 }
+    ];
+    for(const s of spots) await addDoc(collection(db, "parkingSpots"), s);
+    const vehicles = [
+      { vehicleNumber:"AS01AB1234", ownerName:"Rahul Sharma", vehicleType:"Car", registrationDate:"2020-05-10", documents:[{expiresAt:"2025-06-30"}] },
+      { vehicleNumber:"AS02XY5678", ownerName:"Priya Das", vehicleType:"Bike", registrationDate:"2019-03-15", documents:[{expiresAt:"2024-12-31"}] }
+    ];
+    for(const v of vehicles) await addDoc(collection(db, "vehicles"), v);
+    alert('Seeded sample spots & vehicles');
+    adminModal.style.display='none';
+    await loadSpotsToMap();
+  }catch(e){ alert('Seed error: '+(e.message||e)); }
+});
+
+/* ---------- Auth State ---------- */
+onAuthStateChanged(auth, async (user)=>{
+  currentUser = user;
+  if(!user){
+    showScreen(screens.login);
+    userInfo.innerText = '';
+    adminPanelHolder.style.display='none';
+    return;
+  }
+  userInfo.innerText = user.email || user.phoneNumber || user.displayName || user.uid;
+  // If email exists and not verified, show verify screen
+  if(user.email && !user.emailVerified){
+    showScreen(screens.verify);
+    await checkAdminUI(user);
+    return;
+  }
+  // else show home
+  showScreen(screens.home);
+  await initMap();
+  await loadSpotsToMap();
+  await checkAdminUI(user);
+});
+
+/* Resize map to fill area */
+function resizeMap(){
+  const mapEl = document.getElementById('map');
+  const topbarHeight = document.querySelector('.topbar').offsetHeight;
+  const searchHeight = document.getElementById('searchRow').offsetHeight;
+  mapEl.style.height = (window.innerHeight - topbarHeight - searchHeight - 60) + 'px';
+}
+window.addEventListener('resize', resizeMap);
+setTimeout(resizeMap, 300);
+
+/* Debug */
+console.log('Parking NearU loaded — ready');
 </script>
 </body>
 </html>
